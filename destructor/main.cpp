@@ -12,6 +12,7 @@ const int BLAST_RADIUS = 128;
 
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
+
 SDL_Surface* screen_surf = NULL;
 SDL_Surface* sky_surf = NULL;
 SDL_Surface* ground_surf = NULL;
@@ -81,14 +82,20 @@ int main(int argc, char* args[])
     blast_surf = load_bmp_surf("blast.bmp");
     sky_surf = load_bmp_surf("sky.bmp");
 
-    Node *root = new Node;
-
-    // insert_pixels(
-    //     root,
-    //     ground_surf,
-    //     SDL_Rect { 0, 0, ground_surf->w, ground_surf->h }
-    //     // SDL_Rect { 0, 0, 10, 10 }
+    // SDL_Texture *texture = SDL_CreateTexture(
+    //     renderer,
+    //     SDL_PIXELFORMAT_RGBA32,
+    //     SDL_TEXTUREACCESS_STREAMING,
+    //     640,
+    //     480
     // );
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(
+        renderer,
+        sky_surf
+    );
+
+    Node *root = new Node;
 
     // Set top left most pixel color as transparency color
     Uint32 ground_alpha_pix = get_pixel(ground_surf, 0, 0);
@@ -174,13 +181,17 @@ int main(int argc, char* args[])
             &blast_rect
         );
 
-        SDL_UpdateWindowSurface(window);
+        SDL_UpdateTexture(texture, NULL, screen_surf->pixels, screen_surf->pitch);
 
+    
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        
         // SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
         // SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
         // SDL_RenderFillRect(renderer, &fillRect);
 
-        // SDL_RenderPresent( renderer );
+        SDL_RenderPresent(renderer);
     }
 
     close();
