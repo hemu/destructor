@@ -2,13 +2,16 @@
 #include <stdio.h>
 #include <string>
 
-//Screen dimension constants
+#include "quadtree.h"
+#include "utils.h"
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 const int BLAST_RADIUS = 128;
 
 SDL_Window* window = NULL;
+SDL_Renderer* renderer = NULL;
 SDL_Surface* screen_surf = NULL;
 SDL_Surface* sky_surf = NULL;
 SDL_Surface* ground_surf = NULL;
@@ -31,6 +34,17 @@ bool init() {
     {
         exit_with_err("SDL_CreateWindow error");
         return false;
+    }
+
+    renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED );
+    if( renderer == NULL )
+    {
+        SDL_Log("Accelerated renderer could not be created");
+        renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_SOFTWARE);
+    }
+    if( renderer == NULL )
+    {
+        exit_with_err("Renderer could not be created");
     }
 
     screen_surf = SDL_GetWindowSurface(window);
@@ -59,41 +73,6 @@ SDL_Surface* load_bmp_surf(char const* path) {
 
 }
 
-Uint32 get_pixel(SDL_Surface* surface, int x, int y)
-{
-    int bpp = surface->format->BytesPerPixel;
-    /* Here p is the address to the pixel we want to retrieve */
-    Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
-
-    switch (bpp) {
-    case 1:
-        return *p;
-        break;
-    case 2:
-        return *(Uint16*)p;
-        break;
-    case 3:
-        if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return p[0] << 16 | p[1] << 8 | p[2];
-        else
-            return p[0] | p[1] << 8 | p[2] << 16;
-        break;
-    case 4:
-        return *(Uint32*)p;
-        break;
-    default:
-        return 0;
-    }
-}
-
-void set_pixel(SDL_Surface* surface, int x, int y, Uint32 pixel)
-{
-    Uint32* const target_pixel = (Uint32*)((Uint8*)surface->pixels
-        + y * surface->pitch
-        + x * surface->format->BytesPerPixel);
-    *target_pixel = pixel;
-}
-
 int main(int argc, char* args[])
 {
     init();
@@ -101,6 +80,15 @@ int main(int argc, char* args[])
     ground_surf = load_bmp_surf("ground.bmp");
     blast_surf = load_bmp_surf("blast.bmp");
     sky_surf = load_bmp_surf("sky.bmp");
+
+    Node *root = new Node;
+
+    // insert_pixels(
+    //     root,
+    //     ground_surf,
+    //     SDL_Rect { 0, 0, ground_surf->w, ground_surf->h }
+    //     // SDL_Rect { 0, 0, 10, 10 }
+    // );
 
     // Set top left most pixel color as transparency color
     Uint32 ground_alpha_pix = get_pixel(ground_surf, 0, 0);
@@ -187,6 +175,12 @@ int main(int argc, char* args[])
         );
 
         SDL_UpdateWindowSurface(window);
+
+        // SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+        // SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
+        // SDL_RenderFillRect(renderer, &fillRect);
+
+        // SDL_RenderPresent( renderer );
     }
 
     close();
