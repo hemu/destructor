@@ -1,3 +1,4 @@
+#include <sdl/SDL.h>
 #include "quadtree.h"
 
 // TODO: cleanup resources
@@ -14,10 +15,21 @@ bool need_split(SDL_Surface *surf, SDL_Rect r) {
     return false;
 }
 
+void reset_node(Node *n) {
+    if (n->children != NULL && n->count > 0) {
+        for (int i=0; i < n->count; i++) {
+            reset_node(n->children[i]);
+            free(n->children[i]);
+            n->children[i] = NULL;
+        }
+    }
+    n->count = 0;
+}
+
 // if all pixels aren't the same color, need to subdivide
 void insert_pixels(Node *n, SDL_Surface *surf, SDL_Rect r) {
+    n->rect = r;
     if(need_split(surf, r)) {
-        printf("splitting\n");
         n->children[0] = new Node;
         n->children[0]->rect.x = r.x;
         n->children[0]->rect.y = r.y;
@@ -49,5 +61,16 @@ void insert_pixels(Node *n, SDL_Surface *surf, SDL_Rect r) {
         n->count = 4; 
     } else {
         n->pixel = get_pixel(surf, r.x, r.y);
+    }
+}
+
+void draw_node(Node *n, SDL_Renderer *renderer) {
+    for (int i=0; i < n->count; ++i) {
+        if (n->children == NULL) {
+            break;
+        }
+        SDL_SetRenderDrawColor(renderer, 60, 255, 0, 0xFF);
+        SDL_RenderDrawRect(renderer, &n->rect);
+        draw_node(n->children[i], renderer);
     }
 }

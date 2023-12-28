@@ -16,3 +16,5 @@ struct Node {
 
 bool need_split(SDL_Surface *surf, SDL_Rect r);
 void insert_pixels(Node *n, SDL_Surface *surf, SDL_Rect r);
+void draw_node(Node *n, SDL_Renderer *renderer);
+void reset_node(Node *n);

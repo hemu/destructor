@@ -18,6 +18,8 @@ SDL_Surface* sky_surf = NULL;
 SDL_Surface* ground_surf = NULL;
 SDL_Surface* blast_surf = NULL;
 
+bool show_debug_visualization = false;
+
 void exit_with_err(const std::string& msg) {
     printf("%s: %s\n", msg.c_str(), SDL_GetError());
     exit(1);
@@ -30,7 +32,7 @@ bool init() {
         return false;
     }
 
-    window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Destructor Prototype", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
     {
         exit_with_err("SDL_CreateWindow error");
@@ -82,20 +84,13 @@ int main(int argc, char* args[])
     blast_surf = load_bmp_surf("blast.bmp");
     sky_surf = load_bmp_surf("sky.bmp");
 
-    // SDL_Texture *texture = SDL_CreateTexture(
-    //     renderer,
-    //     SDL_PIXELFORMAT_RGBA32,
-    //     SDL_TEXTUREACCESS_STREAMING,
-    //     640,
-    //     480
-    // );
-
     SDL_Texture *texture = SDL_CreateTextureFromSurface(
         renderer,
         sky_surf
     );
 
     Node *root = new Node;
+    insert_pixels(root, ground_surf, SDL_Rect { 0, 0, ground_surf->w, ground_surf->h });
 
     // Set top left most pixel color as transparency color
     Uint32 ground_alpha_pix = get_pixel(ground_surf, 0, 0);
@@ -124,6 +119,11 @@ int main(int argc, char* args[])
             if (e.type == SDL_QUIT) {
                 quit = true;
             }
+            if (e.type == SDL_KEYUP) {
+                if (e.key.keysym.sym == SDLK_d) {
+                    show_debug_visualization = !show_debug_visualization;
+                }
+            }
             if (e.type == SDL_MOUSEMOTION) {
                 int x, y;
                 SDL_GetMouseState(&x, &y);
@@ -135,8 +135,6 @@ int main(int argc, char* args[])
                 SDL_GetMouseState(&x, &y);
                 blast_rect.x = x - BLAST_RADIUS / 2;
                 blast_rect.y = y - BLAST_RADIUS / 2;
-
-                // iterate through ground pixels
 
                 // blast
                 Uint8 br, bg, bb, ba;
@@ -166,6 +164,10 @@ int main(int argc, char* args[])
                         }
                     }
                 }
+
+                // rebuild quadtree
+                reset_node(root);
+                insert_pixels(root, ground_surf, SDL_Rect { 0, 0, ground_surf->w, ground_surf->h });
             }
         }
         SDL_BlitSurface(
@@ -183,13 +185,12 @@ int main(int argc, char* args[])
 
         SDL_UpdateTexture(texture, NULL, screen_surf->pixels, screen_surf->pitch);
 
-    
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         
-        // SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-        // SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
-        // SDL_RenderFillRect(renderer, &fillRect);
+        if (show_debug_visualization) {
+            draw_node(root, renderer);
+        }
 
         SDL_RenderPresent(renderer);
     }
